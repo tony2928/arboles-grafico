@@ -173,6 +173,9 @@ class BSTVisualizer:
                 return
 
             step = steps[index]
+            action = step.get("action")
+            if callable(action):
+                action()
             # Sincronización: Pasamos los punteros definidos en el paso a la función de dibujo
             self.status_var.set(step.get("message", ""))
             self.draw_tree(pointers=step.get("pointers", {}))
@@ -281,8 +284,10 @@ class BSTVisualizer:
         self.canvas.create_text(
             node.x, node.y, text=str(node.value), font=("Arial", 10, "bold")
         )
-        self.canvas.create_text(x1 + w / 6, node.y, text="LI", font=("Arial", 7))
-        self.canvas.create_text(x2 - w / 6, node.y, text="LD", font=("Arial", 7))
+        if node.left is None:
+            self.canvas.create_text(x1 + w / 6, node.y, text="/", font=("Arial", 10))
+        if node.right is None:
+            self.canvas.create_text(x2 - w / 6, node.y, text="/", font=("Arial", 10))
 
         # --- DIBUJAR ETIQUETAS DE PUNTEROS (AP, AUX, etc) ---
         for i, label in enumerate(node_labels):
@@ -404,16 +409,151 @@ class BSTVisualizer:
         self.animate_steps(steps)
 
     def on_delete(self):
-        # La lógica de eliminación de tu código original ya usa 'DEL' y 'AUX'.
-        # Asegúrate de que los nombres en self.pointer_colors coincidan.
         val = self._read_value()
         if val is not None:
-            # Aquí llamarías a tu función delete_value original,
-            # solo asegúrate de que llame a self.animate_steps(steps) al final.
-            messagebox.showinfo(
-                "Info", "Lógica de eliminación conectada a la animación."
+            self.delete_value(val)
+
+    def delete_value(self, value):
+        steps = []
+        parent = None
+        current = self.tree_root
+        removed = False
+
+        while current is not None and current.value != value:
+            steps.append(
+                {
+                    "pointers": {"AP": current},
+                    "message": f"Buscar {value} desde {current.value}",
+                }
             )
-            # (He omitido el copy-paste de delete_value para brevedad, pero funciona igual)
+            parent = current
+            current = current.left if value < current.value else current.right
+
+        if current is None:
+            steps.append(
+                {
+                    "pointers": {"AP": parent} if parent else {},
+                    "message": "La informacion no se encuentra",
+                }
+            )
+            self.animate_steps(steps)
+            return
+
+        steps.append(
+            {"pointers": {"DEL": current}, "message": "Nodo a eliminar encontrado"}
+        )
+
+        if current.right is None:
+            replacement = current.left
+            steps.append(
+                {
+                    "pointers": (
+                        {"DEL": current, "AUX": replacement}
+                        if replacement
+                        else {"DEL": current}
+                    ),
+                    "message": "Reemplazar por subarbol izquierdo",
+                }
+            )
+            steps.append(
+                {
+                    "pointers": {"AP": replacement} if replacement else {},
+                    "message": "Nodo eliminado",
+                    "action": lambda p=parent, c=current, r=replacement: self._replace_child(
+                        p, c, r
+                    ),
+                }
+            )
+            removed = True
+        elif current.left is None:
+            replacement = current.right
+            steps.append(
+                {
+                    "pointers": (
+                        {"DEL": current, "AUX": replacement}
+                        if replacement
+                        else {"DEL": current}
+                    ),
+                    "message": "Reemplazar por subarbol derecho",
+                }
+            )
+            steps.append(
+                {
+                    "pointers": {"AP": replacement} if replacement else {},
+                    "message": "Nodo eliminado",
+                    "action": lambda p=parent, c=current, r=replacement: self._replace_child(
+                        p, c, r
+                    ),
+                }
+            )
+            removed = True
+        else:
+            aux_parent = current
+            aux = current.left
+            moved = False
+            steps.append(
+                {
+                    "pointers": {"DEL": current, "AUX": aux},
+                    "message": "Buscar predecesor (maximo en izquierda)",
+                }
+            )
+            while aux.right is not None:
+                aux_parent = aux
+                aux = aux.right
+                moved = True
+                steps.append(
+                    {
+                        "pointers": {"DEL": current, "AUX": aux, "AUX1": aux_parent},
+                        "message": "Mover AUX a la derecha",
+                    }
+                )
+
+            steps.append(
+                {
+                    "pointers": {"DEL": current, "AUX": aux, "AUX1": aux_parent},
+                    "message": "Listo para reemplazar con predecesor",
+                }
+            )
+
+            def apply_predecessor(
+                target=current,
+                pred=aux,
+                pred_parent=aux_parent,
+                moved_right=moved,
+            ):
+                target.value = pred.value
+                if moved_right:
+                    pred_parent.right = pred.left
+                else:
+                    target.left = pred.left
+
+            steps.append(
+                {
+                    "pointers": {"DEL": current},
+                    "message": "Predecesor copiado, AUX eliminado",
+                    "action": apply_predecessor,
+                }
+            )
+            removed = True
+
+        if removed:
+            steps.append(
+                {
+                    "pointers": {},
+                    "message": "Eliminacion finalizada",
+                }
+            )
+
+        self.animate_steps(steps)
+
+    def _replace_child(self, parent, current, new_child):
+        if parent is None:
+            self.tree_root = new_child
+            return
+        if parent.left is current:
+            parent.left = new_child
+        else:
+            parent.right = new_child
 
     def on_traverse(self, mode):
         steps = []
