@@ -14,7 +14,9 @@ class Node:
 class BSTVisualizer:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Arbol binario de busqueda - Visualizador")
+        self.root.title("BST Visualizador - Retroceso de Puntero")
+        self.root.geometry("1200x850")
+        self.root.configure(bg="#f8fafc")
         self.tree_root = None
         self.animation_token = 0
         self.node_width = 90
@@ -32,55 +34,120 @@ class BSTVisualizer:
         self._build_ui()
 
     def _build_ui(self):
-        main_frame = tk.Frame(self.root)
+        main_frame = tk.Frame(self.root, bg="#f8fafc")
         main_frame.pack(fill="both", expand=True)
 
         # --- SECCIÓN DE CONTROLES (IZQUIERDA) ---
-        controls = tk.Frame(main_frame, padx=10, pady=10)
-        controls.pack(side="left", fill="y")
+        controls = tk.Frame(
+            main_frame,
+            width=280,
+            bg="#ffffff",
+            highlightthickness=1,
+            highlightbackground="#e2e8f0",
+        )
+        controls.pack(side="left", fill="y", padx=5, pady=5)
+        controls.pack_propagate(False)
 
-        tk.Label(controls, text="Valor").pack(anchor="w")
-        self.value_entry = tk.Entry(controls, width=12)
-        self.value_entry.pack(anchor="w", pady=(0, 10))
+        tk.Label(
+            controls,
+            text="CONTROLES DE ARBOL",
+            font=("Arial", 12, "bold"),
+            bg="#ffffff",
+            fg="#1e293b",
+        ).pack(pady=15)
+        self.value_entry = tk.Entry(
+            controls,
+            font=("Arial", 12),
+            justify="center",
+            bd=2,
+            relief="groove",
+        )
+        self.value_entry.pack(pady=5, padx=20, fill="x")
 
-        tk.Button(controls, text="Crear arbol manual", command=self.create_manual).pack(
-            fill="x"
-        )
-        tk.Button(controls, text="Nuevo arbol vacio", command=self.clear_tree).pack(
-            fill="x", pady=(4, 8)
-        )
-        tk.Button(controls, text="Insertar", command=self.on_insert).pack(fill="x")
-        tk.Button(controls, text="Eliminar", command=self.on_delete).pack(
-            fill="x", pady=(4, 0)
-        )
-        tk.Button(controls, text="Buscar", command=self.on_search).pack(
-            fill="x", pady=(4, 8)
-        )
-
-        tk.Label(controls, text="Recorridos:").pack(anchor="w")
         tk.Button(
-            controls, text="Preorden", command=lambda: self.on_traverse("pre")
-        ).pack(fill="x")
+            controls,
+            text="INSERTAR NODO (Auto)",
+            command=self.on_insert,
+            bg="#3b82f6",
+            fg="white",
+            font=("Arial", 9, "bold"),
+        ).pack(pady=5, padx=20, fill="x")
         tk.Button(
-            controls, text="Inorden", command=lambda: self.on_traverse("in")
-        ).pack(fill="x", pady=(4, 0))
+            controls,
+            text="CREAR ARBOL (Manual)",
+            command=self.create_manual,
+            bg="#10b981",
+            fg="white",
+            font=("Arial", 9, "bold"),
+        ).pack(pady=5, padx=20, fill="x")
         tk.Button(
-            controls, text="Postorden", command=lambda: self.on_traverse("post")
-        ).pack(fill="x", pady=(4, 8))
+            controls,
+            text="BUSCAR NODO",
+            command=self.on_search,
+            bg="#f1f5f9",
+            fg="#1e293b",
+            font=("Arial", 9, "bold"),
+        ).pack(pady=5, padx=20, fill="x")
+        tk.Button(
+            controls,
+            text="ELIMINAR NODO",
+            command=self.on_delete,
+            bg="#fee2e2",
+            fg="#b91c1c",
+            font=("Arial", 9, "bold"),
+        ).pack(pady=5, padx=20, fill="x")
 
-        tk.Label(controls, text="Velocidad (ms)").pack(anchor="w")
+        tk.Label(controls, text="Velocidad (ms)", bg="#ffffff", font=("Arial", 8)).pack(
+            pady=(15, 0)
+        )
         tk.Scale(
             controls,
             from_=100,
             to=2000,
             orient="horizontal",
             variable=self.delay_var,
-            length=150,
-        ).pack(anchor="w", pady=(0, 8))
+            bg="#ffffff",
+            relief="flat",
+            highlightthickness=0,
+        ).pack(fill="x", padx=20)
+
+        tk.Label(
+            controls,
+            text="RECORRIDOS",
+            font=("Arial", 10, "bold"),
+            bg="#ffffff",
+        ).pack(pady=(20, 5))
+        tk.Button(
+            controls,
+            text="Preorden",
+            command=lambda: self.on_traverse("pre"),
+        ).pack(pady=2, padx=20, fill="x")
+        tk.Button(
+            controls,
+            text="Inorden",
+            command=lambda: self.on_traverse("in"),
+        ).pack(pady=2, padx=20, fill="x")
+        tk.Button(
+            controls,
+            text="Postorden",
+            command=lambda: self.on_traverse("post"),
+        ).pack(pady=2, padx=20, fill="x")
+
+        tk.Button(
+            controls,
+            text="LIMPIAR ARBOL",
+            command=self.clear_tree,
+            bg="#1e293b",
+            fg="white",
+            font=("Arial", 9, "bold"),
+        ).pack(side="bottom", pady=20, padx=20, fill="x")
 
         # --- SECCIÓN DEL CANVAS CON SCROLLBARS (DERECHA) ---
-        canvas_frame = tk.Frame(main_frame)
-        canvas_frame.pack(side="right", fill="both", expand=True)
+        main_content = tk.Frame(main_frame, bg="#f8fafc")
+        main_content.pack(side="right", fill="both", expand=True)
+
+        canvas_frame = tk.Frame(main_content, bg="#f8fafc")
+        canvas_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Crear barras de desplazamiento
         h_scroll = tk.Scrollbar(canvas_frame, orient="horizontal")
@@ -89,7 +156,7 @@ class BSTVisualizer:
         # Configurar el canvas para usar los scrollbars
         self.canvas = tk.Canvas(
             canvas_frame,
-            bg="#f5f5f5",
+            bg="#f8fafc",
             xscrollcommand=h_scroll.set,
             yscrollcommand=v_scroll.set,
             highlightthickness=0,
@@ -115,16 +182,26 @@ class BSTVisualizer:
         )
 
         # --- SECCIÓN INFERIOR (ESTADO Y SALIDA) ---
-        bottom = tk.Frame(self.root, padx=10, pady=8)
-        bottom.pack(fill="x")
+        status_frame = tk.Frame(main_content, bg="#f8fafc")
+        status_frame.pack(fill="x", padx=30)
         tk.Label(
-            bottom, textvariable=self.status_var, font=("Arial", 10, "bold"), fg="#333"
-        ).pack(fill="x")
+            status_frame,
+            textvariable=self.status_var,
+            font=("Arial", 10, "bold"),
+            fg="#334155",
+            bg="#f8fafc",
+        ).pack(anchor="w", pady=(0, 6))
 
-        output_frame = tk.Frame(self.root, padx=10)
-        output_frame.pack(fill="both", pady=(0, 10))
-        self.output_text = tk.Text(output_frame, height=4)
-        self.output_text.pack(side="left", fill="both", expand=True)
+        self.output_text = tk.Text(
+            main_content,
+            height=4,
+            font=("Consolas", 11),
+            bg="#0f172a",
+            fg="#f1f5f9",
+            padx=15,
+            pady=10,
+        )
+        self.output_text.pack(fill="x", padx=30, pady=(0, 10))
 
     def run(self):
         self.root.mainloop()
@@ -137,10 +214,10 @@ class BSTVisualizer:
         val = self._ask_value("Valor del nodo raiz")
         if val is not None:
             self.tree_root = Node(val)
-            self._create_children_recursive(self.tree_root)
+            self._create_children_recursive(self.tree_root, None, None)
         self.draw_tree()
 
-    def _create_children_recursive(self, node):
+    def _create_children_recursive(self, node, min_val, max_val):
         # Aquí sincronizamos visualmente AP con el nodo actual que se está procesando
         self.draw_tree(pointers={"AP": node})
         self.root.update()  # Forzar actualización de la UI
@@ -148,20 +225,28 @@ class BSTVisualizer:
         if messagebox.askyesno(
             "Hijo Izquierdo", f"¿Crear hijo izquierdo para {node.value}?"
         ):
-            val = self._ask_value(f"Valor izquierdo de {node.value}")
-            if val is not None:
-                node.left = Node(val)
-                self._create_children_recursive(node.left)
+            left_val = self._ask_valid_child_value(
+                f"Valor izquierdo de {node.value}",
+                min_val,
+                node.value,
+            )
+            if left_val is not None:
+                node.left = Node(left_val)
+                self._create_children_recursive(node.left, min_val, node.value)
                 # Al volver de la recursión, re-sincronizar AP al nodo padre
                 self.draw_tree(pointers={"AP": node})
 
         if messagebox.askyesno(
             "Hijo Derecho", f"¿Crear hijo derecho para {node.value}?"
         ):
-            val = self._ask_value(f"Valor derecho de {node.value}")
-            if val is not None:
-                node.right = Node(val)
-                self._create_children_recursive(node.right)
+            right_val = self._ask_valid_child_value(
+                f"Valor derecho de {node.value}",
+                node.value,
+                max_val,
+            )
+            if right_val is not None:
+                node.right = Node(right_val)
+                self._create_children_recursive(node.right, node.value, max_val)
                 self.draw_tree(pointers={"AP": node})
 
     def animate_steps(self, steps):
@@ -216,7 +301,7 @@ class BSTVisualizer:
 
         # Alto: depende de la profundidad máxima (podemos calcularla o usar un valor alto)
         # Aquí calculamos una altura base por nivel (100px por nivel)
-        total_height = 800
+        total_height = 1100
 
         # Activar el área de desplazamiento
         self.canvas.config(scrollregion=(0, 0, total_width, total_height))
@@ -229,28 +314,47 @@ class BSTVisualizer:
             return
 
         if node.left:
+            start_x, start_y, end_x, end_y = self._edge_points(node, node.left)
             self.canvas.create_line(
-                node.x,
-                node.y,
-                node.left.x,
-                node.left.y,
+                start_x,
+                start_y,
+                end_x,
+                end_y,
                 arrow=tk.LAST,
+                arrowshape=(12, 14, 6),
                 fill="#444",
                 width=2,
             )
             self._draw_edges(node.left)
 
         if node.right:
+            start_x, start_y, end_x, end_y = self._edge_points(node, node.right)
             self.canvas.create_line(
-                node.x,
-                node.y,
-                node.right.x,
-                node.right.y,
+                start_x,
+                start_y,
+                end_x,
+                end_y,
                 arrow=tk.LAST,
+                arrowshape=(12, 14, 6),
                 fill="#444",
                 width=2,
             )
             self._draw_edges(node.right)
+
+    def _edge_points(self, parent, child):
+        half_w = self.node_width / 2
+        half_h = self.node_height / 2
+        dx = child.x - parent.x
+        dy = child.y - parent.y
+        if dx == 0 and dy == 0:
+            return parent.x, parent.y, child.x, child.y
+        scale_parent = max(abs(dx) / half_w, abs(dy) / half_h)
+        start_x = parent.x + dx / scale_parent
+        start_y = parent.y + dy / scale_parent
+        scale_child = max(abs(dx) / half_w, abs(dy) / half_h)
+        end_x = child.x - dx / scale_child
+        end_y = child.y - dy / scale_child
+        return start_x, start_y, end_x, end_y
 
     def _draw_nodes(self, node, pointers):
         if not node:
@@ -313,6 +417,23 @@ class BSTVisualizer:
     def _ask_value(self, title):
         return simpledialog.askinteger("Dato", title)
 
+    def _ask_valid_child_value(self, prompt, min_val, max_val):
+        while True:
+            val = self._ask_value(prompt)
+            if val is None:
+                return None
+            if (min_val is not None and val <= min_val) or (
+                max_val is not None and val >= max_val
+            ):
+                low = "-inf" if min_val is None else str(min_val)
+                high = "inf" if max_val is None else str(max_val)
+                messagebox.showwarning(
+                    "Valor invalido",
+                    f"El valor debe estar entre {low} y {high} (sin incluir extremos).",
+                )
+                continue
+            return val
+
     def on_insert(self):
         val = self._read_value()
         if val is not None:
@@ -322,17 +443,39 @@ class BSTVisualizer:
         steps = []
 
         if self.tree_root is None:
-            self.tree_root = Node(value)
             steps.append(
                 {
-                    "pointers": {"AP": self.tree_root},
-                    "message": f"Insertado {value} como raíz",
+                    "pointers": {},
+                    "message": "Arbol vacio, crear raiz",
+                }
+            )
+            pointer_holder = {"AP": None}
+
+            def apply_root():
+                new_node = Node(value)
+                self.tree_root = new_node
+                pointer_holder["AP"] = new_node
+
+            steps.append(
+                {
+                    "pointers": pointer_holder,
+                    "message": f"Insertado {value} como raiz",
+                    "action": apply_root,
+                }
+            )
+            steps.append(
+                {
+                    "pointers": pointer_holder,
+                    "message": "AP regresa a la raiz",
                 }
             )
             self.animate_steps(steps)
             return
 
         current = self.tree_root
+        parent = None
+        side = None
+        path = []
         while True:
             steps.append(
                 {
@@ -343,25 +486,19 @@ class BSTVisualizer:
 
             if value < current.value:
                 if current.left is None:
-                    current.left = Node(value)
-                    steps.append(
-                        {
-                            "pointers": {"AP": current.left},
-                            "message": f"Insertado {value} a la izquierda de {current.value}",
-                        }
-                    )
+                    parent = current
+                    side = "left"
                     break
+                parent = current
+                path.append(current)
                 current = current.left
             elif value > current.value:
                 if current.right is None:
-                    current.right = Node(value)
-                    steps.append(
-                        {
-                            "pointers": {"AP": current.right},
-                            "message": f"Insertado {value} a la derecha de {current.value}",
-                        }
-                    )
+                    parent = current
+                    side = "right"
                     break
+                parent = current
+                path.append(current)
                 current = current.right
             else:
                 # --- AQUÍ ESTÁ EL CAMBIO ---
@@ -380,6 +517,42 @@ class BSTVisualizer:
                     f"El valor {value} ya se encuentra en el árbol.\nNo se permiten duplicados.",
                 )
                 return  # Salimos de la función sin insertar nada
+
+        steps.append(
+            {
+                "pointers": {"AP": parent} if parent else {},
+                "message": "Ubicacion encontrada, insertar nodo",
+            }
+        )
+
+        pointer_holder = {"AP": None}
+
+        def apply_insert():
+            new_node = Node(value)
+            if side == "left":
+                parent.left = new_node
+            else:
+                parent.right = new_node
+            pointer_holder["AP"] = new_node
+
+        steps.append(
+            {
+                "pointers": pointer_holder,
+                "message": f"Insertado {value} como hijo {side}",
+                "action": apply_insert,
+            }
+        )
+
+        backtrack_nodes = list(reversed(path))
+        if parent is not None:
+            backtrack_nodes.insert(0, parent)
+        for node in backtrack_nodes:
+            msg = (
+                "Regresar a la raiz"
+                if node == self.tree_root
+                else f"Regresar a {node.value}"
+            )
+            steps.append({"pointers": {"AP": node}, "message": msg})
 
         self.animate_steps(steps)
 
@@ -558,23 +731,40 @@ class BSTVisualizer:
     def on_traverse(self, mode):
         steps = []
         res = []
+        parent_map = {}
+        last_node = {"node": None}
 
-        def walk(n):
+        def walk(n, parent=None):
             if not n:
                 return
+            if parent is not None:
+                parent_map[n] = parent
             if mode == "pre":
                 steps.append({"pointers": {"AP": n}, "message": f"Visitando {n.value}"})
                 res.append(n.value)
-            walk(n.left)
+                last_node["node"] = n
+            walk(n.left, n)
             if mode == "in":
                 steps.append({"pointers": {"AP": n}, "message": f"Visitando {n.value}"})
                 res.append(n.value)
-            walk(n.right)
+                last_node["node"] = n
+            walk(n.right, n)
             if mode == "post":
                 steps.append({"pointers": {"AP": n}, "message": f"Visitando {n.value}"})
                 res.append(n.value)
+                last_node["node"] = n
 
         walk(self.tree_root)
+
+        node = last_node["node"]
+        while node in parent_map:
+            node = parent_map[node]
+            msg = (
+                "Regresar a la raiz"
+                if node == self.tree_root
+                else f"Regresar a {node.value}"
+            )
+            steps.append({"pointers": {"AP": node}, "message": msg})
         self.output_text.insert("1.0", f"{mode.upper()}: {res}\n")
         self.animate_steps(steps)
 
