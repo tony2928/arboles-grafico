@@ -63,6 +63,7 @@ class BSTVisualizer:
             relief="groove",
         )
         self.value_entry.pack(pady=5, padx=20, fill="x")
+        self.value_entry.bind("<Return>", lambda _event: self.on_insert())
 
         tk.Button(
             controls,
@@ -568,10 +569,12 @@ class BSTVisualizer:
         steps = []
         curr = self.tree_root
         found = False
+        path = []
         while curr:
             steps.append(
                 {"pointers": {"AP": curr}, "message": f"¿Es {val} == {curr.value}?"}
             )
+            path.append(curr)
             if val == curr.value:
                 steps.append({"pointers": {"AP": curr}, "message": "¡Encontrado!"})
                 found = True
@@ -579,6 +582,14 @@ class BSTVisualizer:
             curr = curr.left if val < curr.value else curr.right
         if not found:
             steps.append({"pointers": {}, "message": "No se encontró el valor"})
+        backtrack_nodes = list(reversed(path[:-1]))
+        for node in backtrack_nodes:
+            msg = (
+                "Regresar a la raiz"
+                if node == self.tree_root
+                else f"Regresar a {node.value}"
+            )
+            steps.append({"pointers": {"AP": node}, "message": msg})
         self.animate_steps(steps)
 
     def on_delete(self):
@@ -591,6 +602,7 @@ class BSTVisualizer:
         parent = None
         current = self.tree_root
         removed = False
+        path = []
 
         while current is not None and current.value != value:
             steps.append(
@@ -599,6 +611,7 @@ class BSTVisualizer:
                     "message": f"Buscar {value} desde {current.value}",
                 }
             )
+            path.append(current)
             parent = current
             current = current.left if value < current.value else current.right
 
@@ -609,9 +622,18 @@ class BSTVisualizer:
                     "message": "La informacion no se encuentra",
                 }
             )
+            backtrack_nodes = list(reversed(path[:-1]))
+            for node in backtrack_nodes:
+                msg = (
+                    "Regresar a la raiz"
+                    if node == self.tree_root
+                    else f"Regresar a {node.value}"
+                )
+                steps.append({"pointers": {"AP": node}, "message": msg})
             self.animate_steps(steps)
             return
 
+        path.append(current)
         steps.append(
             {"pointers": {"DEL": current}, "message": "Nodo a eliminar encontrado"}
         )
@@ -710,9 +732,17 @@ class BSTVisualizer:
             removed = True
 
         if removed:
+            backtrack_nodes = list(reversed(path[:-1]))
+            for node in backtrack_nodes:
+                msg = (
+                    "Regresar a la raiz"
+                    if node == self.tree_root
+                    else f"Regresar a {node.value}"
+                )
+                steps.append({"pointers": {"AP": node}, "message": msg})
             steps.append(
                 {
-                    "pointers": {},
+                    "pointers": {"AP": self.tree_root} if self.tree_root else {},
                     "message": "Eliminacion finalizada",
                 }
             )
